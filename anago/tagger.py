@@ -3,6 +3,21 @@ Model API.
 """
 import numpy as np
 from seqeval.metrics.sequence_labeling import get_entities
+import spacy
+
+nlp = spacy.load('en', disable=['parser', 'tagger', 'ner'])
+
+
+def spacy_tokenizer(string):
+    """spaCy tokenizer instead of plain str.split
+
+    Parameters
+    ----------
+    string : str
+        Text string
+    """
+    doc = nlp(string)
+    return [str(each) for each in list(doc)]
 
 
 class Tagger(object):
@@ -14,7 +29,7 @@ class Tagger(object):
         tokenizer: Tokenize input sentence. Default tokenizer is `str.split`.
     """
 
-    def __init__(self, model, preprocessor, tokenizer=str.split):
+    def __init__(self, model, preprocessor, tokenizer=spacy_tokenizer):
         self.model = model
         self.preprocessor = preprocessor
         self.tokenizer = tokenizer
@@ -53,6 +68,8 @@ class Tagger(object):
         return tags
 
     def _build_response(self, sent, tags, prob):
+        raw = ''.join([char if ord(char) < 128 else ' ' for char in sent])
+        raw = raw.replace('\n', ' ')
         words = self.tokenizer(sent)
         res = {
             'words': words,
@@ -64,14 +81,19 @@ class Tagger(object):
 
         for chunk_type, chunk_start, chunk_end in chunks:
             chunk_end += 1
-            entity = {
-                'text': ' '.join(words[chunk_start: chunk_end]),
-                'type': chunk_type,
-                'score': float(np.average(prob[chunk_start: chunk_end])),
-                'beginOffset': chunk_start,
-                'endOffset': chunk_end
-            }
-            res['entities'].append(entity)
+            if chunk_type != '<pad>':
+                start = len(" ".join(words[:chunk_start])) + 1
+                end = start + len(" ".join(words[chunk_start:chunk_end]))
+                entity = {
+                    'text': ' '.join(words[chunk_start: chunk_end]),
+                    'type': chunk_type,
+                    'score': float(np.average(prob[chunk_start: chunk_end])),
+                    'beginOffset': chunk_start,
+                    'endOffset': chunk_end,
+                    'start': start,
+                    'end': end
+                }
+                res['entities'].append(entity)
 
         return res
 

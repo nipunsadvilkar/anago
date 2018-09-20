@@ -8,6 +8,7 @@ from anago.preprocessing import IndexTransformer
 from anago.tagger import Tagger
 from anago.trainer import Trainer
 from anago.utils import filter_embeddings
+from anago.tagger import spacy_tokenizer
 
 
 class Sequence(object):
@@ -105,7 +106,7 @@ class Sequence(object):
             x_test = self.p.transform(x_test)
             y_pred = self.model.predict(x_test)
             y_pred = self.p.inverse_transform(y_pred, lengths)
-            return y_pred 
+            return y_pred
         else:
             raise OSError('Could not find a model. Call load(dir_path).')
 
@@ -132,7 +133,7 @@ class Sequence(object):
         else:
             raise OSError('Could not find a model. Call load(dir_path).')
 
-    def analyze(self, text, tokenizer=str.split):
+    def analyze(self, text, tokenizer=spacy_tokenizer):
         """Analyze text and return pretty format.
 
         Args:

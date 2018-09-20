@@ -197,7 +197,7 @@ class Vocabulary(object):
             str: processed token string.
         """
         if self._lower:
-            token = token.lower()
+            token = str(token).lower()
 
         return token
 
